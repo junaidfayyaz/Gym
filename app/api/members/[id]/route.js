@@ -13,6 +13,10 @@ export async function PUT(req, { params }) {
     await connectToDatabase();
     const body = await req.json();
 
+    if (body.avatar && body.avatar.length > 50000) {
+      body.avatar = '';
+    }
+
     if (body.endDate && body.status !== 'suspended') {
       const now = new Date();
       const end = new Date(body.endDate);

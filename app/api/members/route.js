@@ -38,10 +38,19 @@ export async function GET(req) {
 
     const members = await Member.find(filter).populate('planId').sort({ createdAt: -1 });
 
+    // Sanitize any legacy uncompressed >50KB avatars to prevent network payload bloat
+    const sanitizedMembers = members.map((m) => {
+      const obj = m.toObject();
+      if (obj.avatar && obj.avatar.length > 50000) {
+        obj.avatar = ''; // Strip 24MB legacy string payload
+      }
+      return obj;
+    });
+
     return NextResponse.json({
       success: true,
-      count: members.length,
-      members,
+      count: sanitizedMembers.length,
+      members: sanitizedMembers,
     });
   } catch (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

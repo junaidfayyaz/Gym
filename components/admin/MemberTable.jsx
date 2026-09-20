@@ -5,6 +5,45 @@ import { toast } from 'sonner';
 import { Search, UserPlus, Download, Upload, Edit2, Trash2, Printer, ShieldAlert, FileSpreadsheet, BarChart2 } from 'lucide-react';
 import MemberAttendanceModal from '@/components/admin/MemberAttendanceModal';
 
+// Auto-compress large images (e.g. 24MB down to ~20KB) using client-side HTML5 Canvas
+const compressImage = (file, maxWidth = 250, maxHeight = 250, quality = 0.75) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      img.onerror = () => resolve('');
+    };
+    reader.onerror = () => resolve('');
+  });
+};
+
 const MemberTable = () => {
   const [members, setMembers] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -490,14 +529,13 @@ const MemberTable = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (evt) => {
-                            setForm({ ...form, avatar: evt.target.result });
-                          };
-                          reader.readAsDataURL(file);
+                          toast.info('Compressing photo for fast loading...');
+                          const compressed = await compressImage(file, 250, 250, 0.75);
+                          setForm((f) => ({ ...f, avatar: compressed }));
+                          toast.success('Photo compressed successfully (~20KB)!');
                         }
                       }}
                       className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
