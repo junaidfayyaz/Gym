@@ -532,10 +532,29 @@ const MemberTable = () => {
                       onChange={async (e) => {
                         const file = e.target.files[0];
                         if (file) {
-                          toast.info('Compressing photo for fast loading...');
-                          const compressed = await compressImage(file, 250, 250, 0.75);
-                          setForm((f) => ({ ...f, avatar: compressed }));
-                          toast.success('Photo compressed successfully (~20KB)!');
+                          try {
+                            toast.info('Uploading & optimizing image on Cloudinary CDN...');
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const res = await fetch('/api/upload', {
+                              method: 'POST',
+                              body: formData,
+                            });
+                            const data = await res.json();
+                            if (data.success && data.url) {
+                              setForm((f) => ({ ...f, avatar: data.url }));
+                              toast.success('Image optimized & uploaded to Cloudinary (~50KB WebP)!');
+                            } else {
+                              // Fallback to local canvas compression if upload endpoint is unavailable
+                              const compressed = await compressImage(file, 250, 250, 0.75);
+                              setForm((f) => ({ ...f, avatar: compressed }));
+                              toast.success('Image compressed locally (~20KB WebP)!');
+                            }
+                          } catch (err) {
+                            const compressed = await compressImage(file, 250, 250, 0.75);
+                            setForm((f) => ({ ...f, avatar: compressed }));
+                            toast.success('Image compressed locally (~20KB WebP)!');
+                          }
                         }
                       }}
                       className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
