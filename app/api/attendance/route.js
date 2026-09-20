@@ -12,6 +12,8 @@ function getLocalDateString(dateObj = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const admin = getAdminFromCookie();

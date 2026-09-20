@@ -8,13 +8,32 @@ const InquiriesInbox = () => {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Load initial cached inquiries from localStorage for instant 0ms rendering
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('gym_cached_inquiries');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setInquiries(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const fetchInquiries = async () => {
     try {
-      setLoading(true);
+      if (inquiries.length === 0) {
+        setLoading(true);
+      }
       const res = await fetch('/api/inquiries');
       const data = await res.json();
       if (data.success) {
         setInquiries(data.inquiries);
+        try {
+          localStorage.setItem('gym_cached_inquiries', JSON.stringify(data.inquiries));
+        } catch (e) {}
       }
     } catch (e) {
       toast.error('Failed to load lead inquiries');

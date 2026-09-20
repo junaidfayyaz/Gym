@@ -6,6 +6,8 @@ import Attendance from '@/models/Attendance';
 import { getAdminFromCookie } from '@/lib/auth';
 import { generateNextMemberId, syncMemberStatuses } from '@/lib/memberUtils';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const admin = getAdminFromCookie();

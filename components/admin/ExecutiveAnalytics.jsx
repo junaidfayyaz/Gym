@@ -9,12 +9,26 @@ const ExecutiveAnalytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('gym_cached_analytics');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed) {
+          setData(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+
     const fetchAnalytics = async () => {
       try {
         const res = await fetch('/api/analytics');
         const json = await res.json();
         if (json.success) {
           setData(json);
+          try {
+            localStorage.setItem('gym_cached_analytics', JSON.stringify(json));
+          } catch (e) {}
         }
       } catch (err) {
         console.error('Failed to load analytics:', err);

@@ -22,9 +22,25 @@ const AttendanceTracker = () => {
   const [isToday, setIsToday] = useState(true);
   const [selectedMemberForStats, setSelectedMemberForStats] = useState(null);
 
+  // Load initial cached logs from localStorage for instant 0ms rendering
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('gym_cached_attendance');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLogs(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const fetchLogs = async () => {
     try {
-      setLoading(true);
+      if (logs.length === 0) {
+        setLoading(true);
+      }
       const todayStr = getLocalDateString(new Date());
       const targetDate = selectedDate && selectedDate.trim() ? selectedDate.trim() : todayStr;
       const isSelectedToday = targetDate === todayStr;
@@ -43,6 +59,9 @@ const AttendanceTracker = () => {
         if (typeof data.isToday === 'boolean') {
           setIsToday(data.isToday);
         }
+        try {
+          localStorage.setItem('gym_cached_attendance', JSON.stringify(data.logs));
+        } catch (e) {}
       }
     } catch (e) {
       toast.error('Failed to load attendance records');

@@ -38,9 +38,26 @@ const MemberTable = () => {
   const [csvContent, setCsvContent] = useState('');
   const [isImporting, setIsImporting] = useState(false);
 
+  // Load initial cached data from localStorage for instant 0ms rendering
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('gym_cached_members');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembers(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const fetchMembers = async () => {
     try {
-      setLoading(true);
+      // Only set loading spinner if no members exist in state yet
+      if (members.length === 0) {
+        setLoading(true);
+      }
       let url = '/api/members';
       const params = new URLSearchParams();
       if (search) params.append('search', search);
@@ -52,6 +69,9 @@ const MemberTable = () => {
       const data = await res.json();
       if (data.success) {
         setMembers(data.members);
+        try {
+          localStorage.setItem('gym_cached_members', JSON.stringify(data.members));
+        } catch (e) {}
       }
     } catch (e) {
       toast.error('Failed to load member directory');
